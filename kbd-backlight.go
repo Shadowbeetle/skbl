@@ -40,7 +40,7 @@ func NewKbdBacklight(idleWaitTime time.Duration) (*KbdBacklight, error) {
 	inputCh := make(chan []byte)
 	errCh := make(chan error)
 
-	kbr := &KbdBacklight{
+	kbl := &KbdBacklight{
 		dbusObject:        busObject,
 		dbusSignalCh:      dbusCh,
 		desiredBrightness: initialBrightness,
@@ -49,7 +49,6 @@ func NewKbdBacklight(idleWaitTime time.Duration) (*KbdBacklight, error) {
 		inputCh:           inputCh,
 		errorCh:           errCh,
 	}
-
 	for _, path := range inputhPaths {
 		_, err := os.Stat(path)
 		if err != nil {
@@ -63,51 +62,52 @@ func NewKbdBacklight(idleWaitTime time.Duration) (*KbdBacklight, error) {
 			continue
 		}
 
-		go kbr.readInput(f)
+		kbl.inputs = append(kbl.inputs, f)
+		go kbl.readInput(f)
 	}
 
-	go kbr.listenUserBrightnessChange()
-	go kbr.onIdleTurnOff()
-	go kbr.onInputTurnOn()
+	go kbl.listenUserBrightnessChange()
+	go kbl.onIdleTurnOff()
+	go kbl.onInputTurnOn()
 
-	return kbr, nil
+	return kbl, nil
 }
 
-func (kbr *KbdBacklight) readInput(f *os.File) {
+func (kbl *KbdBacklight) readInput(f *os.File) {
 	b1 := make([]byte, 32) //TODO try to move this out of the loop // Needs to be 32 long as the keyboard event is 32 bits
 	for {
 		_, err := f.Read(b1)
 		if err != nil {
-			kbr.errorCh <- err
+			kbl.errorCh <- err
 			continue
 		}
 
-		kbr.inputCh <- b1
+		kbl.inputCh <- b1
 	}
 }
 
-func (kbr *KbdBacklight) setBrightness() {
-	kbr.dbusObject.Call("org.freedesktop.UPower.KbdBacklight.SetBrightness", 0, kbr.desiredBrightness)
+func (kbl *KbdBacklight) setBrightness() {
+	kbl.dbusObject.Call("org.freedesktop.UPower.KbdBacklight.SetBrightness", 0, kbl.desiredBrightness)
 }
 
-func (kbr *KbdBacklight) listenUserBrightnessChange() {
-	for s := range kbr.dbusSignalCh {
+func (kbl *KbdBacklight) listenUserBrightnessChange() {
+	for s := range kbl.dbusSignalCh {
 		if s.Body[1] == "internal" {
-			kbr.desiredBrightness = s.Body[0].(int32)
-			kbr.timer.Reset(kbr.idleWaitTime)
+			kbl.desiredBrightness = s.Body[0].(int32)
+			kbl.timer.Reset(kbl.idleWaitTime)
 		}
 	}
 }
 
-func (kbr *KbdBacklight) onIdleTurnOff() {
-	for range kbr.timer.C {
-		kbr.dbusObject.Call("org.freedesktop.UPower.KbdBacklight.SetBrightness", 0, 0)
+func (kbl *KbdBacklight) onIdleTurnOff() {
+	for range kbl.timer.C {
+		kbl.dbusObject.Call("org.freedesktop.UPower.KbdBacklight.SetBrightness", 0, 0)
 	}
 }
 
-func (kbr *KbdBacklight) onInputTurnOn() {
-	for range kbr.inputCh {
-		kbr.timer.Reset(kbr.idleWaitTime)
-		kbr.setBrightness()
+func (kbl *KbdBacklight) onInputTurnOn() {
+	for range kbl.inputCh {
+		kbl.timer.Reset(kbl.idleWaitTime)
+		kbl.setBrightness()
 	}
 }
