@@ -62,7 +62,6 @@ func NewKbdBacklight(idleWaitTime time.Duration) (*KbdBacklight, error) {
 			continue
 		}
 
-		kbl.inputs = append(kbl.inputs, f)
 		go kbl.readInput(f)
 	}
 
@@ -74,7 +73,7 @@ func NewKbdBacklight(idleWaitTime time.Duration) (*KbdBacklight, error) {
 }
 
 func (kbl *KbdBacklight) readInput(f *os.File) {
-	b1 := make([]byte, 32) //TODO try to move this out of the loop // Needs to be 32 long as the keyboard event is 32 bits
+	b1 := make([]byte, 32)
 	for {
 		_, err := f.Read(b1)
 		if err != nil {
