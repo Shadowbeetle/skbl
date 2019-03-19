@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -48,20 +49,28 @@ func NewKbdBacklight(conf *Config) (*KbdBacklight, error) {
 		inputCh:           inputCh,
 		errorCh:           errCh,
 	}
+
+	var failCnt int
 	for _, path := range conf.inputhPaths {
 		_, err := os.Stat(path)
 		if err != nil {
-			log.Println("Could not stat input", path, err)
+			log.Println("Could not stat input", path, err.Error())
+			failCnt += 1
 			continue
 		}
 
 		f, err := os.Open(path)
 		if err != nil {
-			log.Println("Could not open input", path, err)
+			log.Println("Could not open input", path, err.Error())
+			failCnt += 1
 			continue
 		}
 
 		go kbl.readInput(f)
+	}
+
+	if failCnt >= len(conf.inputhPaths) {
+		return nil, fmt.Errorf("Could not open any of the provided inputs %v", conf.inputhPaths)
 	}
 
 	go kbl.listenUserBrightnessChange()
