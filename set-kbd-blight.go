@@ -40,16 +40,9 @@ func main() {
 		panic(err)
 	}
 
-	// handle SIGINT
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt)
-
-	for {
-		select {
-		case err := <-kbr.errorCh:
+	for err = range kbr.errorCh {
+		if err != nil {
 			panic(err)
-		case <-sigCh:
-			return
 		}
 	}
 }
