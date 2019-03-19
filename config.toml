@@ -1,0 +1,2 @@
+wait-seconds = "10s"
+inputs = ["/dev/input/mice", "/dev/input/event4"]

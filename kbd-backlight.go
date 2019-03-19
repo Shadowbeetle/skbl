@@ -18,7 +18,7 @@ type KbdBacklight struct {
 	errorCh           chan error
 }
 
-func NewKbdBacklight(idleWaitTime time.Duration) (*KbdBacklight, error) {
+func NewKbdBacklight(conf *Config) (*KbdBacklight, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		return nil, err
@@ -36,7 +36,6 @@ func NewKbdBacklight(idleWaitTime time.Duration) (*KbdBacklight, error) {
 	dbusCh := make(chan *dbus.Signal, 10)
 	conn.Signal(dbusCh)
 
-	inputhPaths := []string{"/dev/input/mice", "/dev/input/event4"} // TODO make this settable by env vars or flags
 	inputCh := make(chan []byte)
 	errCh := make(chan error)
 
@@ -44,12 +43,12 @@ func NewKbdBacklight(idleWaitTime time.Duration) (*KbdBacklight, error) {
 		dbusObject:        busObject,
 		dbusSignalCh:      dbusCh,
 		desiredBrightness: initialBrightness,
-		timer:             time.NewTimer(idleWaitTime),
-		idleWaitTime:      idleWaitTime,
+		timer:             time.NewTimer(conf.idleWaitTime),
+		idleWaitTime:      conf.idleWaitTime,
 		inputCh:           inputCh,
 		errorCh:           errCh,
 	}
-	for _, path := range inputhPaths {
+	for _, path := range conf.inputhPaths {
 		_, err := os.Stat(path)
 		if err != nil {
 			log.Println("Could not stat input", path, err)
