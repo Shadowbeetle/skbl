@@ -1,4 +1,4 @@
-package main
+package backlight
 
 import (
 	"fmt"
@@ -8,6 +8,11 @@ import (
 
 	"github.com/godbus/dbus"
 )
+
+type Config struct {
+	IdleWaitTime time.Duration
+	InputPaths   []string
+}
 
 type KbdBacklight struct {
 	dbusObject        dbus.BusObject
@@ -44,14 +49,14 @@ func NewKbdBacklight(conf *Config) (*KbdBacklight, error) {
 		dbusObject:        busObject,
 		dbusSignalCh:      dbusCh,
 		desiredBrightness: initialBrightness,
-		timer:             time.NewTimer(conf.idleWaitTime),
-		idleWaitTime:      conf.idleWaitTime,
+		timer:             time.NewTimer(conf.IdleWaitTime),
+		idleWaitTime:      conf.IdleWaitTime,
 		inputCh:           inputCh,
 		errorCh:           errCh,
 	}
 
 	var failCnt int
-	for _, path := range conf.inputhPaths {
+	for _, path := range conf.InputPaths {
 		_, err := os.Stat(path)
 		if err != nil {
 			log.Println("Could not stat input", path, err.Error())
@@ -69,8 +74,8 @@ func NewKbdBacklight(conf *Config) (*KbdBacklight, error) {
 		go kbl.readInput(f)
 	}
 
-	if failCnt >= len(conf.inputhPaths) {
-		return nil, fmt.Errorf("Could not open any of the provided inputs %v", conf.inputhPaths)
+	if failCnt >= len(conf.InputPaths) {
+		return nil, fmt.Errorf("Could not open any of the provided inputs %v", conf.InputPaths)
 	}
 
 	go kbl.listenUserBrightnessChange()

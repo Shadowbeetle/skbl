@@ -9,12 +9,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Config struct {
-	inputhPaths  []string
+var (
+	inputPaths   []string
 	idleWaitTime time.Duration
-}
+)
 
-func ReadConfig() *Config {
+func init() {
 	viper := viper.New()
 	viper.SetConfigType("toml")
 	viper.SetConfigName("config")
@@ -37,15 +37,10 @@ func ReadConfig() *Config {
 
 	viper.BindPFlag("wait-seconds", pflag.Lookup("wait"))
 	viper.BindPFlag("inputs", pflag.Lookup("input"))
-	waitTime := viper.GetDuration("wait-seconds") // KBDBL_WAIT_SECONDS
 
-	inputs := viper.GetStringSlice("inputs") // KBDBL_INPUTS=comma,separated,values
+	idleWaitTime = viper.GetDuration("wait-seconds") // KBDBL_WAIT_SECONDS
+	inputPaths = viper.GetStringSlice("inputs")      // KBDBL_INPUTS=comma,separated,values
 
-	fmt.Println("inputs", inputs)
-	fmt.Println("waitSeconds", waitTime)
-
-	return &Config{
-		inputhPaths:  inputs,
-		idleWaitTime: waitTime,
-	}
+	fmt.Println("inputs", inputPaths)
+	fmt.Println("waitSeconds", idleWaitTime)
 }
