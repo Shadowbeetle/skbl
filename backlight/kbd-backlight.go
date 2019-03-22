@@ -21,7 +21,8 @@ type KbdBacklight struct {
 	timer             *time.Timer
 	inputCh           chan []byte
 	idleWaitTime      time.Duration
-	errorCh           chan error
+	ErrorCh           chan error
+	inputPaths        []string
 }
 
 func NewKbdBacklight(conf *Config) (*KbdBacklight, error) {
@@ -52,21 +53,19 @@ func NewKbdBacklight(conf *Config) (*KbdBacklight, error) {
 		timer:             time.NewTimer(conf.IdleWaitTime),
 		idleWaitTime:      conf.IdleWaitTime,
 		inputCh:           inputCh,
-		errorCh:           errCh,
+		ErrorCh:           errCh,
+		inputPaths:        conf.InputPaths,
 	}
 
-	var failCnt int
-	for _, path := range conf.InputPaths {
-		_, err := os.Stat(path)
-		if err != nil {
-			log.Println("Could not stat input", path, err.Error())
-			failCnt += 1
-			continue
-		}
+	return kbl, nil
+}
 
+func (kbl *KbdBacklight) Run() error {
+	var failCnt int
+	for _, path := range kbl.inputPaths {
 		f, err := os.Open(path)
 		if err != nil {
-			log.Println("Could not open input", path, err.Error())
+			log.Println("could not open input", path, err.Error())
 			failCnt += 1
 			continue
 		}
@@ -74,15 +73,15 @@ func NewKbdBacklight(conf *Config) (*KbdBacklight, error) {
 		go kbl.readInput(f)
 	}
 
-	if failCnt >= len(conf.InputPaths) {
-		return nil, fmt.Errorf("Could not open any of the provided inputs %v", conf.InputPaths)
+	if failCnt >= len(kbl.inputPaths) {
+		return fmt.Errorf("could not open any of the provided inputs %v", kbl.inputPaths)
 	}
 
 	go kbl.listenUserBrightnessChange()
 	go kbl.onIdleTurnOff()
 	go kbl.onInputTurnOn()
 
-	return kbl, nil
+	return nil
 }
 
 func (kbl *KbdBacklight) readInput(f *os.File) {
@@ -90,7 +89,7 @@ func (kbl *KbdBacklight) readInput(f *os.File) {
 	for {
 		_, err := f.Read(b1)
 		if err != nil {
-			kbl.errorCh <- err
+			kbl.ErrorCh <- err
 			continue
 		}
 

@@ -12,14 +12,19 @@ func main() {
 		IdleWaitTime: idleWaitTime,
 	}
 
-	kbr, err := backlight.NewKbdBacklight(conf)
+	kbl, err := backlight.NewKbdBacklight(conf)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal(err)
 	}
 
-	for err = range kbr.errorCh {
+	err = kbl.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for err = range kbl.ErrorCh {
 		if err != nil {
-			log.Fatal(err.Error())
+			log.Fatal(err)
 		}
 	}
 }
