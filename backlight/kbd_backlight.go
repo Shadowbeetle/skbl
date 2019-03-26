@@ -6,14 +6,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/Shadowbeetle/set-kbd-blight/dbus"
-	godbus "github.com/godbus/dbus"
+	"github.com/Shadowbeetle/set-kbd-blight/upower"
+	"github.com/godbus/dbus"
 )
 
 type KbdBacklight struct {
 	*Config
-	dbusObject        dbus.DbusObject
-	dbusSignalCh      chan *godbus.Signal
+	dbusObject        upower.DbusObject
+	dbusSignalCh      chan *dbus.Signal
 	desiredBrightness int32
 	timer             *time.Timer
 	inputCh           chan []byte
@@ -28,15 +28,15 @@ func NewKbdBacklight(conf Config) (*KbdBacklight, error) {
 
 	var initialBrightness int32
 	brPtr := &initialBrightness
-	busObject := dbus.GetObject(conf.dbusConnection)
-	call := dbus.CallGetBrightness(busObject)
-	err = dbus.StoreBrightness(call, brPtr)
+	busObject := upower.GetObject(conf.dbusConnection)
+	call := upower.CallGetBrightness(busObject)
+	err = upower.StoreBrightness(call, brPtr)
 	if err != nil {
 		return nil, err
 	}
 
-	dbusCh := make(chan *godbus.Signal, 10)
-	dbus.SignalListen(conf.dbusConnection, busObject, dbusCh)
+	dbusCh := make(chan *dbus.Signal, 10)
+	upower.SignalListen(conf.dbusConnection, busObject, dbusCh)
 
 	inputCh := make(chan []byte)
 	errCh := make(chan error)
@@ -92,7 +92,7 @@ func (kbl *KbdBacklight) readInput(f *os.File) {
 }
 
 func (kbl *KbdBacklight) setBrightness() {
-	dbus.CallSetBrightness(kbl.dbusObject, kbl.desiredBrightness)
+	upower.CallSetBrightness(kbl.dbusObject, kbl.desiredBrightness)
 }
 
 func (kbl *KbdBacklight) listenUserBrightnessChange() {
@@ -106,7 +106,7 @@ func (kbl *KbdBacklight) listenUserBrightnessChange() {
 
 func (kbl *KbdBacklight) onIdleTurnOff() {
 	for range kbl.timer.C {
-		dbus.CallSetBrightness(kbl.dbusObject, 0)
+		upower.CallSetBrightness(kbl.dbusObject, 0)
 	}
 }
 

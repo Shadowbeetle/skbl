@@ -1,4 +1,4 @@
-package dbus
+package upower
 
 import (
 	"github.com/godbus/dbus"
