@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	conf := &backlight.Config{
+	conf := backlight.Config{
 		InputPaths:   inputPaths,
 		IdleWaitTime: idleWaitTime,
 	}

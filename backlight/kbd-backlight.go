@@ -6,55 +6,49 @@ import (
 	"os"
 	"time"
 
-	"github.com/godbus/dbus"
+	"github.com/Shadowbeetle/set-kbd-blight/dbus"
+	godbus "github.com/godbus/dbus"
 )
 
-type Config struct {
-	IdleWaitTime time.Duration
-	InputPaths   []string
-}
-
 type KbdBacklight struct {
-	dbusObject        dbus.BusObject
-	dbusSignalCh      chan *dbus.Signal
+	*Config
+	dbusObject        dbus.DbusObject
+	dbusSignalCh      chan *godbus.Signal
 	desiredBrightness int32
 	timer             *time.Timer
 	inputCh           chan []byte
-	idleWaitTime      time.Duration
 	ErrorCh           chan error
-	inputPaths        []string
 }
 
-func NewKbdBacklight(conf *Config) (*KbdBacklight, error) {
-	conn, err := dbus.SystemBus()
+func NewKbdBacklight(conf Config) (*KbdBacklight, error) {
+	err := conf.setDefaults()
 	if err != nil {
 		return nil, err
 	}
 
 	var initialBrightness int32
 	brPtr := &initialBrightness
-	busObject := conn.Object("org.freedesktop.UPower", "/org/freedesktop/UPower/KbdBacklight")
-	err = busObject.Call("org.freedesktop.UPower.KbdBacklight.GetBrightness", 0).Store(brPtr)
+	busObject := dbus.GetObject(conf.dbusConnection)
+	call := dbus.CallGetBrightness(busObject)
+	err = dbus.StoreBrightness(call, brPtr)
 	if err != nil {
 		return nil, err
 	}
 
-	busObject.AddMatchSignal("org.freedesktop.UPower.KbdBacklight", "BrightnessChangedWithSource")
-	dbusCh := make(chan *dbus.Signal, 10)
-	conn.Signal(dbusCh)
+	dbusCh := make(chan *godbus.Signal, 10)
+	dbus.SignalListen(conf.dbusConnection, busObject, dbusCh)
 
 	inputCh := make(chan []byte)
 	errCh := make(chan error)
 
 	kbl := &KbdBacklight{
+		Config:            &conf,
 		dbusObject:        busObject,
 		dbusSignalCh:      dbusCh,
 		desiredBrightness: initialBrightness,
 		timer:             time.NewTimer(conf.IdleWaitTime),
-		idleWaitTime:      conf.IdleWaitTime,
 		inputCh:           inputCh,
 		ErrorCh:           errCh,
-		inputPaths:        conf.InputPaths,
 	}
 
 	return kbl, nil
@@ -62,7 +56,7 @@ func NewKbdBacklight(conf *Config) (*KbdBacklight, error) {
 
 func (kbl *KbdBacklight) Run() error {
 	var failCnt int
-	for _, path := range kbl.inputPaths {
+	for _, path := range kbl.InputPaths {
 		f, err := os.Open(path)
 		if err != nil {
 			log.Println("could not open input", path, err.Error())
@@ -73,8 +67,8 @@ func (kbl *KbdBacklight) Run() error {
 		go kbl.readInput(f)
 	}
 
-	if failCnt >= len(kbl.inputPaths) {
-		return fmt.Errorf("could not open any of the provided inputs %v", kbl.inputPaths)
+	if failCnt >= len(kbl.InputPaths) {
+		return fmt.Errorf("could not open any of the provided inputs %v", kbl.InputPaths)
 	}
 
 	go kbl.listenUserBrightnessChange()
@@ -98,27 +92,27 @@ func (kbl *KbdBacklight) readInput(f *os.File) {
 }
 
 func (kbl *KbdBacklight) setBrightness() {
-	kbl.dbusObject.Call("org.freedesktop.UPower.KbdBacklight.SetBrightness", 0, kbl.desiredBrightness)
+	dbus.CallSetBrightness(kbl.dbusObject, kbl.desiredBrightness)
 }
 
 func (kbl *KbdBacklight) listenUserBrightnessChange() {
 	for s := range kbl.dbusSignalCh {
 		if s.Body[1] == "internal" {
 			kbl.desiredBrightness = s.Body[0].(int32)
-			kbl.timer.Reset(kbl.idleWaitTime)
+			kbl.timer.Reset(kbl.IdleWaitTime)
 		}
 	}
 }
 
 func (kbl *KbdBacklight) onIdleTurnOff() {
 	for range kbl.timer.C {
-		kbl.dbusObject.Call("org.freedesktop.UPower.KbdBacklight.SetBrightness", 0, 0)
+		dbus.CallSetBrightness(kbl.dbusObject, 0)
 	}
 }
 
 func (kbl *KbdBacklight) onInputTurnOn() {
 	for range kbl.inputCh {
-		kbl.timer.Reset(kbl.idleWaitTime)
+		kbl.timer.Reset(kbl.IdleWaitTime)
 		kbl.setBrightness()
 	}
 }
