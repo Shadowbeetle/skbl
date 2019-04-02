@@ -6,40 +6,55 @@ import (
 
 type DbusConnection struct {
 	IsObjectStubCalled bool
-	Args               DbusObjectStubArgs
-}
-
-type DbusObjectStubArgs struct {
-	Dest string
-	Path dbus.ObjectPath
 }
 
 func NewDbusConnection() *DbusConnection {
 	return &DbusConnection{
 		IsObjectStubCalled: false,
-		Args:               DbusObjectStubArgs{},
 	}
 }
 
-func (mconn *DbusConnection) Object(dest string, path dbus.ObjectPath) dbus.Object {
+func (mconn *DbusConnection) Object(dest string, path dbus.ObjectPath) dbus.BusObject {
 	mconn.IsObjectStubCalled = true
-	mconn.Args = DbusObjectStubArgs{dest, path}
-	return dbus.Object{}
+	return &dbus.Object{}
 }
 
 func (mconn *DbusConnection) Signal(ch chan<- *dbus.Signal) {}
 
-// type MockDbusObject struct {
-// 	isCallStubCalled bool
-// }
+func NewDbusObject(expectedBrightness int32) *DbusObject {
+	return &DbusObject{
+		ExpectedBrightess: expectedBrightness,
+	}
+}
 
-// func (mobj *MockDbusObject) AddMatchSignal(iface string, member string) *MockDbusCall {
-// 	return &MockDbusCall{}
-// }
+type DbusObject struct {
+	IsCallStubCalled       bool
+	IsAddMatchSignalCalled bool
+	AddMatchSignalStubArgs AddMatchSignalStubArgs
+	ExpectedBrightess      int32
+}
 
-// func (movj *MockDbusObject) Call(method string, flags dbus.Flags, args ...interface{}) *MockDbusCall {
-// 	return &MockDbusCall{}
-// }
+type AddMatchSignalStubArgs struct {
+	Method string
+	Member string
+	Args   []dbus.MatchOption
+}
+
+func (mobj *DbusObject) AddMatchSignal(method string, member string, args ...dbus.MatchOption) *dbus.Call {
+	mobj.AddMatchSignalStubArgs = AddMatchSignalStubArgs{method, member, args}
+	return &dbus.Call{
+		Body: []interface{}{},
+		Err:  nil,
+	}
+}
+
+func (mobj *DbusObject) Call(method string, flags dbus.Flags, args ...interface{}) *dbus.Call {
+	return &dbus.Call{
+		Body: []interface{}{mobj.ExpectedBrightess},
+		Err:  nil,
+		Args: args,
+	}
+}
 
 // type MockDbusCall struct{}
 

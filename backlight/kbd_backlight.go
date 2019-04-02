@@ -12,7 +12,6 @@ import (
 
 type KbdBacklight struct {
 	*Config
-	dbusObject        upower.DbusObject
 	dbusSignalCh      chan *dbus.Signal
 	desiredBrightness int32
 	timer             *time.Timer
@@ -26,26 +25,21 @@ func NewKbdBacklight(conf Config) (*KbdBacklight, error) {
 		return nil, err
 	}
 
-	var initialBrightness int32
-	brPtr := &initialBrightness
-	busObject := upower.GetObject(conf.dbusConnection)
-	call := upower.CallGetBrightness(busObject)
-	err = upower.StoreBrightness(call, brPtr)
+	initBr, err := upower.GetBrightness(conf.dbusObject)
 	if err != nil {
 		return nil, err
 	}
 
 	dbusCh := make(chan *dbus.Signal, 10)
-	upower.SignalListen(conf.dbusConnection, busObject, dbusCh)
+	upower.SignalListen(conf.dbusConnection, conf.dbusObject, dbusCh)
 
 	inputCh := make(chan []byte)
 	errCh := make(chan error)
 
 	kbl := &KbdBacklight{
 		Config:            &conf,
-		dbusObject:        busObject,
 		dbusSignalCh:      dbusCh,
-		desiredBrightness: initialBrightness,
+		desiredBrightness: initBr,
 		timer:             time.NewTimer(conf.IdleWaitTime),
 		inputCh:           inputCh,
 		ErrorCh:           errCh,
@@ -71,7 +65,7 @@ func (kbl *KbdBacklight) Run() error {
 		return fmt.Errorf("could not open any of the provided inputs %v", kbl.InputPaths)
 	}
 
-	go kbl.listenUserBrightnessChange()
+	go kbl.onUserBrightnessChange()
 	go kbl.onIdleTurnOff()
 	go kbl.onInputTurnOn()
 
@@ -91,11 +85,7 @@ func (kbl *KbdBacklight) readInput(f *os.File) {
 	}
 }
 
-func (kbl *KbdBacklight) setBrightness() {
-	upower.CallSetBrightness(kbl.dbusObject, kbl.desiredBrightness)
-}
-
-func (kbl *KbdBacklight) listenUserBrightnessChange() {
+func (kbl *KbdBacklight) onUserBrightnessChange() {
 	for s := range kbl.dbusSignalCh {
 		if s.Body[1] == "internal" {
 			kbl.desiredBrightness = s.Body[0].(int32)
@@ -106,13 +96,19 @@ func (kbl *KbdBacklight) listenUserBrightnessChange() {
 
 func (kbl *KbdBacklight) onIdleTurnOff() {
 	for range kbl.timer.C {
-		upower.CallSetBrightness(kbl.dbusObject, 0)
+		err := upower.SetBrightness(kbl.dbusObject, 0)
+		if err != nil {
+			kbl.ErrorCh <- err
+		}
 	}
 }
 
 func (kbl *KbdBacklight) onInputTurnOn() {
 	for range kbl.inputCh {
 		kbl.timer.Reset(kbl.IdleWaitTime)
-		kbl.setBrightness()
+		err := upower.SetBrightness(kbl.dbusObject, kbl.desiredBrightness)
+		if err != nil {
+			kbl.ErrorCh <- err
+		}
 	}
 }

@@ -11,6 +11,7 @@ type Config struct {
 	IdleWaitTime   time.Duration
 	InputPaths     []string
 	dbusConnection upower.DbusConnection
+	dbusObject     upower.DbusObject
 }
 
 func (conf *Config) setDefaults() error {
@@ -21,5 +22,10 @@ func (conf *Config) setDefaults() error {
 		}
 		conf.dbusConnection = dConn
 	}
+
+	if conf.dbusObject == nil {
+		conf.dbusObject = upower.GetObject(conf.dbusConnection)
+	}
+
 	return nil
 }

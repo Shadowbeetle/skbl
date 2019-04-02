@@ -1,33 +1,46 @@
 package backlight
 
-// import (
-// 	"testing"
-// 	"time"
-// )
+import (
+	"fmt"
+	"testing"
+	"time"
 
-// func TestNewKbdBacklight(t *testing.T) {
-// 	// expectedConnDest := "org.freedesktop.UPower"
+	"github.com/Shadowbeetle/set-kbd-blight/upower/mock"
+	"github.com/godbus/dbus"
+)
 
-// 	mockDConn := &MockDbusConnection{}
+func TestNewKbdBacklight(t *testing.T) {
+	// expectedConnDest := "org.freedesktop.UPower"
+	expBr := int32(999)
+	expectedAddMatchSignalStubArgs := mock.AddMatchSignalStubArgs{
+		Method: "org.freedesktop.UPower.KbdBacklight",
+		Member: "BrightnessChangedWithSource",
+		Args:   []dbus.MatchOption{0},
+	}
 
-// 	conf := Config{
-// 		IdleWaitTime:   time.Duration(5) * time.Second,
-// 		InputPaths:     []string{"/test/input/kbd"},
-// 		dbusConnection: mockDConn,
-// 	}
+	mockConn := mock.NewDbusConnection()
+	mockDObj := mock.NewDbusObject(expBr)
 
-// 	_ /*kbl*/, err := NewKbdBacklight(conf)
-// 	if err != nil {
-// 		t.Fatalf("expected nil error got %s instead", err.Error())
-// 	}
+	conf := Config{
+		IdleWaitTime:   time.Duration(5) * time.Second,
+		InputPaths:     []string{"/test/input/kbd"},
+		dbusConnection: mockConn,
+		dbusObject:     mockDObj,
+	}
 
-// 	if !mockDConn.isObjectStubCalled {
-// 		t.Errorf("expected MockDbusConnection.Object stub to be called, got false")
-// 	}
+	kbl, err := NewKbdBacklight(conf)
+	if err != nil {
+		panic(err)
+		t.Fatalf("expected nil error got %s instead", err.Error())
+	}
 
-// 	// if mockDConn.args.dest !=
-// 	// TODO: should call conn.Object("org.freedesktop.UPower", "/org/freedesktop/UPower/KbdBacklight")
-// 	// TODO: should set brPtr and should set kbl.desiredBrightness
-// 	// TODO: should call busObject.AddMatchSignal("org.freedesktop.UPower.KbdBacklight", "BrightnessChangedWithSource")
-// 	// TODO: should retun &KbdBacklight with proper setup
-// }
+	if kbl.desiredBrightness != expBr {
+		t.Errorf("expected kbl.desiredBrightess to equal %d got %d instead", expBr, kbl.desiredBrightness)
+	}
+
+	// TODO: should call busObject.AddMatchSignal("org.freedesktop.UPower.KbdBacklight", "BrightnessChangedWithSource")
+	// TODO should call AddMatchSignal with expectedArgs
+	fmt.Printf("%v\n", mockDObj)
+	fmt.Printf("%v\n", kbl)
+	// TODO: should retun &KbdBacklight with proper setup
+}

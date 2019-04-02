@@ -31,16 +31,14 @@ func GetObject(conn DbusConnection) dbus.BusObject {
 	return conn.Object(DESTINATION, OBJECT_PATH)
 }
 
-func CallGetBrightness(o DbusObject) *dbus.Call {
-	return o.Call(CALL_GET_BRIGHTNESS, 0)
+func GetBrightness(o DbusObject) (int32, error) {
+	var br int32
+	err := o.Call(CALL_GET_BRIGHTNESS, 0).Store(&br)
+	return br, err
 }
 
-func CallSetBrightness(o DbusObject, value int32) {
-	o.Call(CALL_SET_BRIGHTNESS, 0, value)
-}
-
-func StoreBrightness(c DbusCall, store *int32) error {
-	return c.Store(store)
+func SetBrightness(o DbusObject, value int32) error {
+	return o.Call(CALL_SET_BRIGHTNESS, 0, value).Store() // Hack so we don't need to listen on call.Dbus and to get call.Err returned instead of having it as a memeber
 }
 
 func SignalListen(conn DbusConnection, o DbusObject, ch chan<- *dbus.Signal) {
