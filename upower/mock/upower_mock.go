@@ -29,6 +29,7 @@ func NewDbusObject(expectedBrightness int32) *DbusObject {
 
 type DbusObject struct {
 	IsCallStubCalled       bool
+	CallStubArgs           CallStubArgs
 	IsAddMatchSignalCalled bool
 	AddMatchSignalStubArgs AddMatchSignalStubArgs
 	ExpectedBrightess      int32
@@ -41,6 +42,7 @@ type AddMatchSignalStubArgs struct {
 }
 
 func (mobj *DbusObject) AddMatchSignal(method string, member string, args ...dbus.MatchOption) *dbus.Call {
+	mobj.IsAddMatchSignalCalled = true
 	mobj.AddMatchSignalStubArgs = AddMatchSignalStubArgs{method, member, args}
 	return &dbus.Call{
 		Body: []interface{}{},
@@ -48,16 +50,18 @@ func (mobj *DbusObject) AddMatchSignal(method string, member string, args ...dbu
 	}
 }
 
+type CallStubArgs struct {
+	Method string
+	Flags  dbus.Flags
+	Args   []interface{}
+}
+
 func (mobj *DbusObject) Call(method string, flags dbus.Flags, args ...interface{}) *dbus.Call {
+	mobj.IsCallStubCalled = true
+	mobj.CallStubArgs = CallStubArgs{method, flags, args}
 	return &dbus.Call{
 		Body: []interface{}{mobj.ExpectedBrightess},
 		Err:  nil,
 		Args: args,
 	}
 }
-
-// type MockDbusCall struct{}
-
-// func (mcall *MockDbusCall) Store(retvalues ...interface{}) error {
-// 	return errors.New("Error")
-// }
