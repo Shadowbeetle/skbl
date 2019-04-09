@@ -5,24 +5,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Shadowbeetle/set-kbd-blight/upower/mock"
+	"github.com/Shadowbeetle/set-kbd-blight/mock/upower"
 )
 
 func TestNewKbdBacklight(t *testing.T) {
 	expBr := int32(999)
 	expIdleWT := time.Duration(5) * time.Second
 
-	expectedCallArgs := mock.CallStubArgs{
+	expectedCallArgs := upower.CallStubArgs{
 		Method: "org.freedesktop.UPower.KbdBacklight.GetBrightness",
 	}
 
-	expectedAddMatchSignalStubArgs := mock.AddMatchSignalStubArgs{
+	expectedAddMatchSignalStubArgs := upower.AddMatchSignalStubArgs{
 		Method: "org.freedesktop.UPower.KbdBacklight",
 		Member: "BrightnessChangedWithSource",
 	}
 
-	mockConn := mock.NewDbusConnection()
-	mockDObj := mock.NewDbusObject(expBr)
+	mockConn := upower.NewDbusConnection()
+	mockDObj := upower.NewDbusObject(expBr)
 
 	conf := Config{
 		IdleWaitTime:   expIdleWT,
@@ -82,3 +82,5 @@ func TestNewKbdBacklight(t *testing.T) {
 		t.Errorf("expected kbl.IdleWaitTime to equl %v, got %v instead\n", expIdleWT, kbl.IdleWaitTime)
 	}
 }
+
+// func TestRun(t *testing.T)

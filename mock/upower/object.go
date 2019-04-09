@@ -1,31 +1,8 @@
-package mock
+package upower
 
 import (
 	"github.com/godbus/dbus"
 )
-
-type DbusConnection struct {
-	IsObjectStubCalled bool
-}
-
-func NewDbusConnection() *DbusConnection {
-	return &DbusConnection{
-		IsObjectStubCalled: false,
-	}
-}
-
-func (mconn *DbusConnection) Object(dest string, path dbus.ObjectPath) dbus.BusObject {
-	mconn.IsObjectStubCalled = true
-	return &dbus.Object{}
-}
-
-func (mconn *DbusConnection) Signal(ch chan<- *dbus.Signal) {}
-
-func NewDbusObject(expectedBrightness int32) *DbusObject {
-	return &DbusObject{
-		ExpectedBrightess: expectedBrightness,
-	}
-}
 
 type DbusObject struct {
 	IsCallStubCalled       bool
@@ -33,6 +10,12 @@ type DbusObject struct {
 	IsAddMatchSignalCalled bool
 	AddMatchSignalStubArgs AddMatchSignalStubArgs
 	ExpectedBrightess      int32
+}
+
+func NewDbusObject(expectedBrightness int32) *DbusObject {
+	return &DbusObject{
+		ExpectedBrightess: expectedBrightness,
+	}
 }
 
 type AddMatchSignalStubArgs struct {
