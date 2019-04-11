@@ -1,9 +1,7 @@
 package backlight
 
 import (
-	"fmt"
-	"log"
-	"os"
+	"io"
 	"time"
 
 	"github.com/Shadowbeetle/set-kbd-blight/upower"
@@ -49,20 +47,8 @@ func NewKbdBacklight(conf Config) (*KbdBacklight, error) {
 }
 
 func (kbl *KbdBacklight) Run() error {
-	var failCnt int
-	for _, path := range kbl.InputPaths {
-		f, err := os.Open(path)
-		if err != nil {
-			log.Println("could not open input", path, err.Error())
-			failCnt += 1
-			continue
-		}
-
+	for _, f := range kbl.InputFiles {
 		go kbl.readInput(f)
-	}
-
-	if failCnt >= len(kbl.InputPaths) {
-		return fmt.Errorf("could not open any of the provided inputs %v", kbl.InputPaths)
 	}
 
 	go kbl.onUserBrightnessChange()
@@ -72,7 +58,7 @@ func (kbl *KbdBacklight) Run() error {
 	return nil
 }
 
-func (kbl *KbdBacklight) readInput(f *os.File) {
+func (kbl *KbdBacklight) readInput(f io.Reader) {
 	b1 := make([]byte, 32)
 	for {
 		_, err := f.Read(b1)

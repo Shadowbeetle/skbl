@@ -26,7 +26,7 @@ func TestNewKbdBacklight(t *testing.T) {
 
 	conf := Config{
 		IdleWaitTime:   expIdleWT,
-		InputPaths:     []string{"/test/input/kbd"},
+		InputFiles:     []string{"/test/input/kbd"},
 		dbusConnection: mockConn,
 		dbusObject:     mockDObj,
 	}
@@ -34,7 +34,6 @@ func TestNewKbdBacklight(t *testing.T) {
 	kbl, err := NewKbdBacklight(conf)
 
 	if err != nil {
-		panic(err)
 		t.Fatalf("expected nil error got %s instead\n", err.Error())
 	}
 
@@ -83,4 +82,19 @@ func TestNewKbdBacklight(t *testing.T) {
 	}
 }
 
-// func TestRun(t *testing.T)
+func TestRun(t *testing.T) {
+	mockConn := upower.NewDbusConnection()
+	mockDObj := upower.NewDbusObject(9)
+
+	conf := Config{
+		IdleWaitTime:   time.Duration(5),
+		InputFiles:     []string{"/test/input/kbd"},
+		dbusConnection: mockConn,
+		dbusObject:     mockDObj,
+	}
+
+	kbl, err := NewKbdBacklight(conf)
+
+	kbl.Run()
+
+}

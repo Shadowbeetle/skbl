@@ -1,6 +1,7 @@
 package backlight
 
 import (
+	"io"
 	"time"
 
 	"github.com/Shadowbeetle/set-kbd-blight/upower"
@@ -9,7 +10,7 @@ import (
 
 type Config struct {
 	IdleWaitTime   time.Duration
-	InputPaths     []string
+	InputFiles     []io.Reader
 	dbusConnection upower.DbusConnection
 	dbusObject     upower.DbusObject
 }
