@@ -1,10 +1,14 @@
 package backlight
 
 import (
+	"fmt"
+	"io"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/Shadowbeetle/set-kbd-blight/mock/clock"
 	"github.com/Shadowbeetle/set-kbd-blight/mock/upower"
 )
 
@@ -22,11 +26,11 @@ func TestNewKbdBacklight(t *testing.T) {
 	}
 
 	mockConn := upower.NewDbusConnection()
-	mockDObj := upower.NewDbusObject(expBr)
+	mockDObj := upower.NewDbusObject(expBr, true)
 
 	conf := Config{
 		IdleWaitTime:   expIdleWT,
-		InputFiles:     []string{"/test/input/kbd"},
+		InputFiles:     []io.Reader{strings.NewReader("/test/input/kbd")},
 		dbusConnection: mockConn,
 		dbusObject:     mockDObj,
 	}
@@ -84,17 +88,47 @@ func TestNewKbdBacklight(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	mockConn := upower.NewDbusConnection()
-	mockDObj := upower.NewDbusObject(9)
+	mockDObj := upower.NewDbusObject(9, true)
+
+	fakeTimer := clock.NewTimer()
+	qwerInput := &strings.Reader{}
+	asdfInput := &strings.Reader{}
+	zxcvInput := &strings.Reader{}
+	readers := []io.Reader{qwerInput, asdfInput, zxcvInput}
 
 	conf := Config{
 		IdleWaitTime:   time.Duration(5),
-		InputFiles:     []string{"/test/input/kbd"},
+		InputFiles:     readers,
 		dbusConnection: mockConn,
 		dbusObject:     mockDObj,
 	}
 
 	kbl, err := NewKbdBacklight(conf)
 
+	if err != nil {
+		t.Fatalf("expected nil error got %s instead\n", err.Error())
+	}
+
+	kbl.timer = fakeTimer
+	mockDObj.ShouldStore = false
 	kbl.Run()
 
+	qwerInput.Reset("q")
+	<-fakeTimer.ResetStrobe
+
+	fmt.Println(fakeTimer.ResetStubCallTimes)
+
+	asdfInput.Reset("a")
+	<-fakeTimer.ResetStrobe
+
+	fmt.Println(fakeTimer.ResetStubCallTimes)
+
+	zxcvInput.Reset("z")
+	<-fakeTimer.ResetStrobe
+
+	qwerInput.Reset("w")
+	<-fakeTimer.ResetStrobe
+
+	fmt.Println(fakeTimer.ResetStubCallTimes)
+	// TODO stub upowerSetBrightness
 }

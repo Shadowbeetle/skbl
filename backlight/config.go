@@ -15,6 +15,12 @@ type Config struct {
 	dbusObject     upower.DbusObject
 }
 
+type preventListeners struct {
+	userBrightnessChange bool
+	idle                 bool
+	input                bool
+}
+
 func (conf *Config) setDefaults() error {
 	if conf.dbusConnection == nil {
 		dConn, err := dbus.SystemBus()

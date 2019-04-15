@@ -10,11 +10,13 @@ type DbusObject struct {
 	IsAddMatchSignalCalled bool
 	AddMatchSignalStubArgs AddMatchSignalStubArgs
 	ExpectedBrightess      int32
+	ShouldStore            bool
 }
 
-func NewDbusObject(expectedBrightness int32) *DbusObject {
+func NewDbusObject(expectedBrightness int32, shouldStore bool) *DbusObject {
 	return &DbusObject{
 		ExpectedBrightess: expectedBrightness,
+		ShouldStore:       shouldStore,
 	}
 }
 
@@ -42,8 +44,15 @@ type CallStubArgs struct {
 func (mobj *DbusObject) Call(method string, flags dbus.Flags, args ...interface{}) *dbus.Call {
 	mobj.IsCallStubCalled = true
 	mobj.CallStubArgs = CallStubArgs{method, flags, args}
+	var body []interface{}
+	if mobj.ShouldStore {
+		body = []interface{}{mobj.ExpectedBrightess}
+	} else {
+		body = []interface{}{}
+	}
+
 	return &dbus.Call{
-		Body: []interface{}{mobj.ExpectedBrightess},
+		Body: body,
 		Err:  nil,
 		Args: args,
 	}
