@@ -7,6 +7,7 @@ import (
 type DbusObject struct {
 	IsCallStubCalled       bool
 	CallStubArgs           CallStubArgs
+	CallStubCallCount      int
 	IsAddMatchSignalCalled bool
 	AddMatchSignalStubArgs AddMatchSignalStubArgs
 	ExpectedBrightess      int32
@@ -44,6 +45,7 @@ type CallStubArgs struct {
 func (mobj *DbusObject) Call(method string, flags dbus.Flags, args ...interface{}) *dbus.Call {
 	mobj.IsCallStubCalled = true
 	mobj.CallStubArgs = CallStubArgs{method, flags, args}
+	mobj.CallStubCallCount += 1
 	var body []interface{}
 	if mobj.ShouldStore {
 		body = []interface{}{mobj.ExpectedBrightess}

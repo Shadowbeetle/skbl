@@ -6,7 +6,7 @@ import (
 
 type Timer struct {
 	IsResetStubCalled  bool
-	ResetStubCallTimes int
+	ResetStubCallCount int
 	ResetStubArg       time.Duration
 	ResetStrobe        chan bool
 }
@@ -20,7 +20,7 @@ func NewTimer() *Timer {
 
 func (t *Timer) Reset(d time.Duration) bool {
 	t.IsResetStubCalled = true
-	t.ResetStubCallTimes += 1
+	t.ResetStubCallCount += 1
 	t.ResetStubArg = d
 	t.ResetStrobe <- true
 	return true

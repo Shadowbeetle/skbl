@@ -1,7 +1,6 @@
 package backlight
 
 import (
-	"fmt"
 	"io"
 	"time"
 
@@ -63,14 +62,11 @@ func (kbl *KbdBacklight) onInputTurnOn(f io.Reader) {
 	b1 := make([]byte, 32)
 	for {
 		_, err := f.Read(b1)
-		fmt.Println("bytes read", string(b1))
 		if err != nil {
-			fmt.Println("error happened", err)
 			kbl.ErrorCh <- err
 			continue
 		}
 
-		fmt.Println("resetting timer")
 		kbl.timer.Reset(kbl.IdleWaitTime)
 
 		err = upower.SetBrightness(kbl.dbusObject, kbl.desiredBrightness)
@@ -83,7 +79,7 @@ func (kbl *KbdBacklight) onInputTurnOn(f io.Reader) {
 func (kbl *KbdBacklight) onIdleTurnOff() {
 	timer, ok := kbl.timer.(*time.Timer)
 	if !ok {
-		kbl.ErrorCh <- fmt.Errorf("kbl.timer is not time.Timer")
+		kbl.ErrorCh <- TimerError
 		return
 	}
 

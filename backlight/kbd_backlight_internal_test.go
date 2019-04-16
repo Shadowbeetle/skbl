@@ -1,7 +1,6 @@
 package backlight
 
 import (
-	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -87,8 +86,14 @@ func TestNewKbdBacklight(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
+	expectedBrightness := int32(9)
 	mockConn := upower.NewDbusConnection()
-	mockDObj := upower.NewDbusObject(9, true)
+	mockDObj := upower.NewDbusObject(expectedBrightness, true)
+
+	expectedCallArgs := upower.CallStubArgs{
+		Method: "org.freedesktop.UPower.KbdBacklight.SetBrightness",
+		Args:   []interface{}{expectedBrightness},
+	}
 
 	fakeTimer := clock.NewTimer()
 	qwerInput := &strings.Reader{}
@@ -113,22 +118,64 @@ func TestRun(t *testing.T) {
 	mockDObj.ShouldStore = false
 	kbl.Run()
 
+	go func() {
+		for err := range kbl.ErrorCh {
+			if err == io.EOF || err == TimerError {
+				continue
+			}
+			t.Fatalf("got unexpected error from kbl.ErrorCh %s\n", err.Error())
+		}
+	}()
+
 	qwerInput.Reset("q")
 	<-fakeTimer.ResetStrobe
 
-	fmt.Println(fakeTimer.ResetStubCallTimes)
+	if fakeTimer.ResetStubArg != conf.IdleWaitTime {
+		t.Errorf("expected fakeTimer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, fakeTimer.ResetStubArg)
+	}
+
+	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
+		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, mockDObj.CallStubArgs)
+	}
 
 	asdfInput.Reset("a")
 	<-fakeTimer.ResetStrobe
 
-	fmt.Println(fakeTimer.ResetStubCallTimes)
+	if fakeTimer.ResetStubArg != conf.IdleWaitTime {
+		t.Errorf("expected fakeTimer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, fakeTimer.ResetStubArg)
+	}
+
+	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
+		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, mockDObj.CallStubArgs)
+	}
 
 	zxcvInput.Reset("z")
 	<-fakeTimer.ResetStrobe
 
+	if fakeTimer.ResetStubArg != conf.IdleWaitTime {
+		t.Errorf("expected fakeTimer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, fakeTimer.ResetStubArg)
+	}
+
+	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
+		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, mockDObj.CallStubArgs)
+	}
+
 	qwerInput.Reset("w")
 	<-fakeTimer.ResetStrobe
 
-	fmt.Println(fakeTimer.ResetStubCallTimes)
-	// TODO stub upowerSetBrightness
+	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
+		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, mockDObj.CallStubArgs)
+	}
+
+	if fakeTimer.ResetStubArg != conf.IdleWaitTime {
+		t.Errorf("expected fakeTimer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, fakeTimer.ResetStubArg)
+	}
+
+	if fakeTimer.ResetStubCallCount != 4 {
+		t.Errorf("expected fakeTimer.Reset to be called 4 times got %d instead\n", fakeTimer.ResetStubCallCount)
+	}
+
+	if mockDObj.CallStubCallCount != 5 {
+		t.Errorf("expected mockDObj.Call to be called 5 times got %d instead\n", mockDObj.CallStubCallCount)
+	}
 }
