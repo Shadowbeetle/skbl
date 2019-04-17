@@ -85,7 +85,7 @@ func TestNewKbdBacklight(t *testing.T) {
 	}
 }
 
-func TestRun(t *testing.T) {
+func TestRunInput(t *testing.T) {
 	expectedBrightness := int32(9)
 	mockConn := upower.NewDbusConnection()
 	mockDObj := upower.NewDbusObject(expectedBrightness, true)
@@ -100,12 +100,14 @@ func TestRun(t *testing.T) {
 	asdfInput := &strings.Reader{}
 	zxcvInput := &strings.Reader{}
 	readers := []io.Reader{qwerInput, asdfInput, zxcvInput}
-
+	timer := clock.NewTimer()
 	conf := Config{
 		IdleWaitTime:   time.Duration(5),
 		InputFiles:     readers,
 		dbusConnection: mockConn,
 		dbusObject:     mockDObj,
+		timer:          timer,
+		timerC:         timer.C,
 	}
 
 	kbl, err := NewKbdBacklight(conf)
@@ -120,7 +122,7 @@ func TestRun(t *testing.T) {
 
 	go func() {
 		for err := range kbl.ErrorCh {
-			if err == io.EOF || err == TimerError {
+			if err == io.EOF {
 				continue
 			}
 			t.Fatalf("got unexpected error from kbl.ErrorCh %s\n", err.Error())
@@ -179,3 +181,9 @@ func TestRun(t *testing.T) {
 		t.Errorf("expected mockDObj.Call to be called 5 times got %d instead\n", mockDObj.CallStubCallCount)
 	}
 }
+
+func TestRun(t *testing.T) {
+
+}
+
+func TestConfig(t *testing.T) {}

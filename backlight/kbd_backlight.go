@@ -1,10 +1,9 @@
 package backlight
 
 import (
+	"fmt"
 	"io"
-	"time"
 
-	"github.com/Shadowbeetle/set-kbd-blight/clock"
 	"github.com/Shadowbeetle/set-kbd-blight/upower"
 	"github.com/godbus/dbus"
 )
@@ -13,7 +12,6 @@ type KbdBacklight struct {
 	*Config
 	dbusSignalCh      chan *dbus.Signal
 	desiredBrightness int32
-	timer             clock.Timer
 	inputCh           chan bool
 	ErrorCh           chan error
 }
@@ -39,7 +37,6 @@ func NewKbdBacklight(conf Config) (*KbdBacklight, error) {
 		Config:            &conf,
 		dbusSignalCh:      dbusCh,
 		desiredBrightness: initBr,
-		timer:             time.NewTimer(conf.IdleWaitTime),
 		inputCh:           inputCh,
 		ErrorCh:           errCh,
 	}
@@ -67,6 +64,7 @@ func (kbl *KbdBacklight) onInputTurnOn(f io.Reader) {
 			continue
 		}
 
+		fmt.Printf("%+v", kbl.timer)
 		kbl.timer.Reset(kbl.IdleWaitTime)
 
 		err = upower.SetBrightness(kbl.dbusObject, kbl.desiredBrightness)
@@ -77,13 +75,7 @@ func (kbl *KbdBacklight) onInputTurnOn(f io.Reader) {
 }
 
 func (kbl *KbdBacklight) onIdleTurnOff() {
-	timer, ok := kbl.timer.(*time.Timer)
-	if !ok {
-		kbl.ErrorCh <- TimerError
-		return
-	}
-
-	for range timer.C {
+	for range kbl.timerC {
 		err := upower.SetBrightness(kbl.dbusObject, 0)
 		if err != nil {
 			kbl.ErrorCh <- err

@@ -9,6 +9,7 @@ type Timer struct {
 	ResetStubCallCount int
 	ResetStubArg       time.Duration
 	ResetStrobe        chan bool
+	C                  <-chan time.Time
 }
 
 func NewTimer() *Timer {
