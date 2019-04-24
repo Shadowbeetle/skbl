@@ -10,11 +10,16 @@ type Timer struct {
 	ResetStubArg       time.Duration
 	ResetStrobe        chan bool
 	C                  <-chan time.Time
+	Expire             func()
 }
 
 func NewTimer() *Timer {
+	c := make(chan time.Time)
+
 	return &Timer{
 		ResetStrobe:       make(chan bool),
+		C:                 c,
+		Expire:            func() { c <- time.Time{} },
 		IsResetStubCalled: false,
 	}
 }

@@ -12,8 +12,8 @@ import (
 )
 
 func TestNewKbdBacklight(t *testing.T) {
-	expBr := int32(999)
-	expIdleWT := time.Duration(5) * time.Second
+	expBr := int32(1)
+	expIdleWT := time.Duration(111) * time.Second
 
 	expectedCallArgs := upower.CallStubArgs{
 		Method: "org.freedesktop.UPower.KbdBacklight.GetBrightness",
@@ -25,7 +25,7 @@ func TestNewKbdBacklight(t *testing.T) {
 	}
 
 	mockConn := upower.NewDbusConnection()
-	mockDObj := upower.NewDbusObject(expBr, true)
+	mockDObj := upower.NewDbusObject(expBr, true, false)
 
 	conf := Config{
 		IdleWaitTime:   expIdleWT,
@@ -64,45 +64,32 @@ func TestNewKbdBacklight(t *testing.T) {
 		t.Errorf("expected kbl.Config to be %+v got %+v instead\n", kbl.Config, conf)
 	}
 
-	if kbl.inputCh == nil {
-		t.Errorf("expected kbl.inputCh to be set, got nil instead\n")
-	}
-
-	if kbl.dbusSignalCh == nil {
-		t.Errorf("expected kbl.dbusSignalCh to be set, got nil instead\n")
-	}
-
-	if kbl.timer == nil {
-		t.Errorf("expected kbl.timer to be set, got nil isntead\n")
-	}
-
-	if kbl.ErrorCh == nil {
-		t.Errorf("expected kbl.ErrorCh to be set, got nil isntead\n")
-	}
-
 	if kbl.IdleWaitTime != expIdleWT {
 		t.Errorf("expected kbl.IdleWaitTime to equl %v, got %v instead\n", expIdleWT, kbl.IdleWaitTime)
 	}
 }
 
 func TestRunInput(t *testing.T) {
-	expectedBrightness := int32(9)
+	done := make(chan bool)
+	defer func() { done <- true }()
+
+	expBr := int32(2)
 	mockConn := upower.NewDbusConnection()
-	mockDObj := upower.NewDbusObject(expectedBrightness, true)
+	mockDObj := upower.NewDbusObject(expBr, true, false)
 
 	expectedCallArgs := upower.CallStubArgs{
 		Method: "org.freedesktop.UPower.KbdBacklight.SetBrightness",
-		Args:   []interface{}{expectedBrightness},
+		Args:   []interface{}{expBr},
 	}
 
-	fakeTimer := clock.NewTimer()
 	qwerInput := &strings.Reader{}
 	asdfInput := &strings.Reader{}
 	zxcvInput := &strings.Reader{}
 	readers := []io.Reader{qwerInput, asdfInput, zxcvInput}
 	timer := clock.NewTimer()
+
 	conf := Config{
-		IdleWaitTime:   time.Duration(5),
+		IdleWaitTime:   time.Duration(222),
 		InputFiles:     readers,
 		dbusConnection: mockConn,
 		dbusObject:     mockDObj,
@@ -116,24 +103,28 @@ func TestRunInput(t *testing.T) {
 		t.Fatalf("expected nil error got %s instead\n", err.Error())
 	}
 
-	kbl.timer = fakeTimer
 	mockDObj.ShouldStore = false
 	kbl.Run()
 
 	go func() {
-		for err := range kbl.ErrorCh {
-			if err == io.EOF {
-				continue
+		for {
+			select {
+			case err := <-kbl.ErrorCh:
+				if err == io.EOF {
+					continue
+				}
+				t.Fatalf("got unexpected error from kbl.ErrorCh %s\n", err.Error())
+			case <-done:
+				return
 			}
-			t.Fatalf("got unexpected error from kbl.ErrorCh %s\n", err.Error())
 		}
 	}()
 
 	qwerInput.Reset("q")
-	<-fakeTimer.ResetStrobe
+	<-timer.ResetStrobe
 
-	if fakeTimer.ResetStubArg != conf.IdleWaitTime {
-		t.Errorf("expected fakeTimer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, fakeTimer.ResetStubArg)
+	if timer.ResetStubArg != conf.IdleWaitTime {
+		t.Errorf("expected timer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, timer.ResetStubArg)
 	}
 
 	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
@@ -141,10 +132,10 @@ func TestRunInput(t *testing.T) {
 	}
 
 	asdfInput.Reset("a")
-	<-fakeTimer.ResetStrobe
+	<-timer.ResetStrobe
 
-	if fakeTimer.ResetStubArg != conf.IdleWaitTime {
-		t.Errorf("expected fakeTimer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, fakeTimer.ResetStubArg)
+	if timer.ResetStubArg != conf.IdleWaitTime {
+		t.Errorf("expected timer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, timer.ResetStubArg)
 	}
 
 	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
@@ -152,10 +143,10 @@ func TestRunInput(t *testing.T) {
 	}
 
 	zxcvInput.Reset("z")
-	<-fakeTimer.ResetStrobe
+	<-timer.ResetStrobe
 
-	if fakeTimer.ResetStubArg != conf.IdleWaitTime {
-		t.Errorf("expected fakeTimer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, fakeTimer.ResetStubArg)
+	if timer.ResetStubArg != conf.IdleWaitTime {
+		t.Errorf("expected timer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, timer.ResetStubArg)
 	}
 
 	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
@@ -163,18 +154,18 @@ func TestRunInput(t *testing.T) {
 	}
 
 	qwerInput.Reset("w")
-	<-fakeTimer.ResetStrobe
+	<-timer.ResetStrobe
 
 	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
 		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, mockDObj.CallStubArgs)
 	}
 
-	if fakeTimer.ResetStubArg != conf.IdleWaitTime {
-		t.Errorf("expected fakeTimer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, fakeTimer.ResetStubArg)
+	if timer.ResetStubArg != conf.IdleWaitTime {
+		t.Errorf("expected timer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, timer.ResetStubArg)
 	}
 
-	if fakeTimer.ResetStubCallCount != 4 {
-		t.Errorf("expected fakeTimer.Reset to be called 4 times got %d instead\n", fakeTimer.ResetStubCallCount)
+	if timer.ResetStubCallCount != 4 {
+		t.Errorf("expected timer.Reset to be called 4 times got %d instead\n", timer.ResetStubCallCount)
 	}
 
 	if mockDObj.CallStubCallCount != 5 {
@@ -182,7 +173,110 @@ func TestRunInput(t *testing.T) {
 	}
 }
 
-func TestRun(t *testing.T) {
+func TestRunIdle(t *testing.T) {
+	done := make(chan bool)
+	defer func() { done <- true }()
+
+	idleWaitTime := time.Duration(333)
+	mockConn := upower.NewDbusConnection()
+	mockDObj := upower.NewDbusObject(3, true, false)
+
+	expectedCallArgs := upower.CallStubArgs{
+		Method: "org.freedesktop.UPower.KbdBacklight.SetBrightness",
+		Args:   []interface{}{int32(0)},
+	}
+
+	input := &strings.Reader{}
+	timer := clock.NewTimer()
+
+	conf := Config{
+		IdleWaitTime:   idleWaitTime,
+		InputFiles:     []io.Reader{input},
+		dbusConnection: mockConn,
+		dbusObject:     mockDObj,
+		timer:          timer,
+		timerC:         timer.C,
+	}
+
+	kbl, err := NewKbdBacklight(conf)
+
+	if err != nil {
+		t.Fatalf("expected nil error got %s instead\n", err.Error())
+	}
+
+	mockDObj.ShouldStore = false
+	mockDObj.ShouldCallStrobe = true
+	kbl.Run()
+
+	go func() {
+		for {
+			select {
+			case err := <-kbl.ErrorCh:
+				if err == io.EOF {
+					continue
+				}
+				t.Fatalf("got unexpected error from kbl.ErrorCh %s\n", err.Error())
+			case <-done:
+				return
+			}
+		}
+	}()
+
+	timer.Expire()
+	<-mockDObj.CallStrobe
+	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
+		t.Errorf("expected Call to be called with %+v got %+v instead", expectedCallArgs, mockDObj.CallStubArgs)
+	}
+}
+
+func TestRunUserBrightnessChange(t *testing.T) {
+	// done := make(chan bool)
+	// defer func() { done <- true }()
+
+	// idleWaitTime := time.Duration(444)
+	// mockConn := upower.NewDbusConnection()
+	// mockDObj := upower.NewDbusObject(3, true, false)
+
+	// expectedCallArgs := upower.CallStubArgs{
+	// 	Method: "org.freedesktop.UPower.KbdBacklight.SetBrightness",
+	// 	Args:   []interface{}{int32(0)},
+	// }
+
+	// input := &strings.Reader{}
+	// timer := clock.NewTimer()
+
+	// conf := Config{
+	// 	IdleWaitTime:   idleWaitTime,
+	// 	InputFiles:     []io.Reader{input},
+	// 	dbusConnection: mockConn,
+	// 	dbusObject:     mockDObj,
+	// 	timer:          timer,
+	// 	timerC:         timer.C,
+	// }
+
+	// kbl, err := NewKbdBacklight(conf)
+
+	// if err != nil {
+	// 	t.Fatalf("expected nil error got %s instead\n", err.Error())
+	// }
+
+	// mockDObj.ShouldStore = false
+	// mockDObj.ShouldCallStrobe = true
+	// kbl.Run()
+
+	// go func() {
+	// 	for {
+	// 		select {
+	// 		case err := <-kbl.ErrorCh:
+	// 			if err == io.EOF {
+	// 				continue
+	// 			}
+	// 			t.Fatalf("got unexpected error from kbl.ErrorCh %s\n", err.Error())
+	// 		case <-done:
+	// 			return
+	// 		}
+	// 	}
+	// }()
 
 }
 

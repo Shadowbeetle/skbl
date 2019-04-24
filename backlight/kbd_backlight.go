@@ -1,7 +1,6 @@
 package backlight
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/Shadowbeetle/set-kbd-blight/upower"
@@ -44,15 +43,13 @@ func NewKbdBacklight(conf Config) (*KbdBacklight, error) {
 	return kbl, nil
 }
 
-func (kbl *KbdBacklight) Run() error {
+func (kbl *KbdBacklight) Run() {
 	for _, f := range kbl.InputFiles {
 		go kbl.onInputTurnOn(f)
 	}
 
 	go kbl.onUserBrightnessChange()
 	go kbl.onIdleTurnOff()
-
-	return nil
 }
 
 func (kbl *KbdBacklight) onInputTurnOn(f io.Reader) {
@@ -64,7 +61,6 @@ func (kbl *KbdBacklight) onInputTurnOn(f io.Reader) {
 			continue
 		}
 
-		fmt.Printf("%+v", kbl.timer)
 		kbl.timer.Reset(kbl.IdleWaitTime)
 
 		err = upower.SetBrightness(kbl.dbusObject, kbl.desiredBrightness)
