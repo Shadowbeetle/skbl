@@ -9,6 +9,7 @@ import (
 
 	"github.com/Shadowbeetle/set-kbd-blight/mock/clock"
 	"github.com/Shadowbeetle/set-kbd-blight/mock/upower"
+	"github.com/godbus/dbus"
 )
 
 func TestNewKbdBacklight(t *testing.T) {
@@ -230,54 +231,59 @@ func TestRunIdle(t *testing.T) {
 }
 
 func TestRunUserBrightnessChange(t *testing.T) {
-	// done := make(chan bool)
-	// defer func() { done <- true }()
+	done := make(chan bool)
+	defer func() { done <- true }()
 
-	// idleWaitTime := time.Duration(444)
-	// mockConn := upower.NewDbusConnection()
-	// mockDObj := upower.NewDbusObject(3, true, false)
+	expectedBrightness := int32(10)
+	idleWaitTime := time.Duration(444)
+	mockConn := upower.NewDbusConnection()
+	mockDObj := upower.NewDbusObject(4, true, false)
 
-	// expectedCallArgs := upower.CallStubArgs{
-	// 	Method: "org.freedesktop.UPower.KbdBacklight.SetBrightness",
-	// 	Args:   []interface{}{int32(0)},
-	// }
+	input := &strings.Reader{}
+	timer := clock.NewTimer()
 
-	// input := &strings.Reader{}
-	// timer := clock.NewTimer()
+	conf := Config{
+		IdleWaitTime:   idleWaitTime,
+		InputFiles:     []io.Reader{input},
+		dbusConnection: mockConn,
+		dbusObject:     mockDObj,
+		timer:          timer,
+		timerC:         timer.C,
+	}
 
-	// conf := Config{
-	// 	IdleWaitTime:   idleWaitTime,
-	// 	InputFiles:     []io.Reader{input},
-	// 	dbusConnection: mockConn,
-	// 	dbusObject:     mockDObj,
-	// 	timer:          timer,
-	// 	timerC:         timer.C,
-	// }
+	kbl, err := NewKbdBacklight(conf)
 
-	// kbl, err := NewKbdBacklight(conf)
+	if err != nil {
+		t.Fatalf("expected nil error got %s instead\n", err.Error())
+	}
 
-	// if err != nil {
-	// 	t.Fatalf("expected nil error got %s instead\n", err.Error())
-	// }
+	mockDObj.ShouldStore = false
+	mockDObj.ShouldCallStrobe = true
+	kbl.Run()
 
-	// mockDObj.ShouldStore = false
-	// mockDObj.ShouldCallStrobe = true
-	// kbl.Run()
+	go func() {
+		for {
+			select {
+			case err := <-kbl.ErrorCh:
+				if err == io.EOF {
+					continue
+				}
+				t.Fatalf("got unexpected error from kbl.ErrorCh %s\n", err.Error())
+			case <-done:
+				return
+			}
+		}
+	}()
 
-	// go func() {
-	// 	for {
-	// 		select {
-	// 		case err := <-kbl.ErrorCh:
-	// 			if err == io.EOF {
-	// 				continue
-	// 			}
-	// 			t.Fatalf("got unexpected error from kbl.ErrorCh %s\n", err.Error())
-	// 		case <-done:
-	// 			return
-	// 		}
-	// 	}
-	// }()
+	kbl.dbusSignalCh <- &dbus.Signal{
+		Body: []interface{}{expectedBrightness, "internal"},
+	}
 
+	<-timer.ResetStrobe
+
+	if kbl.desiredBrightness != expectedBrightness {
+		t.Errorf("expected kbl.desiredBrightness to be %d got %d instead", expectedBrightness, kbl.desiredBrightness)
+	}
 }
 
 func TestConfig(t *testing.T) {}
