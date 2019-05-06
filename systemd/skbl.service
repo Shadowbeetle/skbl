@@ -1,0 +1,11 @@
+[Unit]
+Description=Turn off keyboard backlight after a certain period of idleness
+Documentation=man:skbl(1)
+
+[Service]
+ExecStart=/usr/bin/skbl
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
