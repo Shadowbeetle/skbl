@@ -18,8 +18,8 @@ func init() {
 	viper := viper.New()
 	viper.SetConfigType("toml")
 	viper.SetConfigName("config")
-	viper.AddConfigPath("/etc/appname/")
-	viper.AddConfigPath("$HOME/.appname")
+	viper.AddConfigPath("/etc/skbl/")
+	viper.AddConfigPath("$HOME/.skbl")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
 	if err != nil {
