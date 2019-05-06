@@ -4,8 +4,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/Shadowbeetle/set-kbd-blight/clock"
-	"github.com/Shadowbeetle/set-kbd-blight/upower"
+	"github.com/Shadowbeetle/skbl/clock"
+	"github.com/Shadowbeetle/skbl/upower"
 	"github.com/godbus/dbus"
 )
 

@@ -3,7 +3,7 @@ package backlight
 import (
 	"io"
 
-	"github.com/Shadowbeetle/set-kbd-blight/upower"
+	"github.com/Shadowbeetle/skbl/upower"
 	"github.com/godbus/dbus"
 )
 

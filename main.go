@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/Shadowbeetle/set-kbd-blight/backlight"
+	"github.com/Shadowbeetle/skbl/backlight"
 )
 
 func main() {
@@ -35,10 +35,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = kbl.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
+	kbl.Run()
 
 	for err = range kbl.ErrorCh {
 		if err != nil {

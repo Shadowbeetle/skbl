@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Shadowbeetle/set-kbd-blight/mock/clock"
-	"github.com/Shadowbeetle/set-kbd-blight/mock/upower"
+	"github.com/Shadowbeetle/skbl/mock/clock"
+	"github.com/Shadowbeetle/skbl/mock/upower"
 	"github.com/godbus/dbus"
 )
 
