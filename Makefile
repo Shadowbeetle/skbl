@@ -35,6 +35,7 @@ clean:
 
 .PHONY: install
 install: $(BIN_TARGET_PATH) $(SYSTEMD_TARGET_PATH) config_dir $(CONFIG_TARGET_PATH)
+	usermod -aG input $(USER)
 	systemctl --user daemon-reload
 
 $(BIN_TARGET_PATH): build
