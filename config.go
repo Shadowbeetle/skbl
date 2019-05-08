@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -18,8 +17,8 @@ func init() {
 	viper := viper.New()
 	viper.SetConfigType("toml")
 	viper.SetConfigName("config")
+	viper.AddConfigPath("$HOME/.skbl/")
 	viper.AddConfigPath("/etc/skbl/")
-	viper.AddConfigPath("$HOME/.skbl")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -40,7 +39,4 @@ func init() {
 
 	idleWaitTime = viper.GetDuration("wait-seconds") // KBDBL_WAIT_SECONDS
 	inputPaths = viper.GetStringSlice("inputs")      // KBDBL_INPUTS=comma,separated,values
-
-	fmt.Println("inputs", inputPaths)
-	fmt.Println("waitSeconds", idleWaitTime)
 }
