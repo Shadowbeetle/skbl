@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	"time"
 
 	"github.com/spf13/pflag"
@@ -24,10 +23,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
-	viper.SetEnvPrefix("KBDBL")
-	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	viper.AutomaticEnv()
 
 	pflag.DurationP("wait", "w", time.Duration(5), "Turn off the keyboard backlight after {wait} seconds when the selected inputs are idle")
 	pflag.StringSliceP("input", "i", []string{"/dev/input/mice"}, "Input files to read from eg. /dev/input/mice or /dev/input/by-path/platform-i8042-serio-0-event-kbd")
