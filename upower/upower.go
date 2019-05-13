@@ -38,7 +38,7 @@ func GetBrightness(o DbusObject) (int32, error) {
 }
 
 func SetBrightness(o DbusObject, value int32) error {
-	return o.Call(CALL_SET_BRIGHTNESS, 0, value).Store() // Hack so we don't need to listen on call.Dbus and to get call.Err returned instead of having it as a memeber
+	return o.Call(CALL_SET_BRIGHTNESS, 0, value).Store() // Hack so we don't need to listen on call.Dbus and to get call.Err returned instead of having it as a member
 }
 
 func SignalListen(conn DbusConnection, o DbusObject, ch chan<- *dbus.Signal) {
