@@ -32,6 +32,6 @@ func init() {
 	viper.BindPFlag("wait-seconds", pflag.Lookup("wait"))
 	viper.BindPFlag("inputs", pflag.Lookup("input"))
 
-	idleWaitTime = viper.GetDuration("wait-seconds") // KBDBL_WAIT_SECONDS
-	inputPaths = viper.GetStringSlice("inputs")      // KBDBL_INPUTS=comma,separated,values
+	idleWaitTime = viper.GetDuration("wait-seconds")
+	inputPaths = viper.GetStringSlice("inputs")
 }
