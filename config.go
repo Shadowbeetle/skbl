@@ -7,12 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	inputPaths   []string
-	idleWaitTime time.Duration
-)
-
-func init() {
+func readConfig() (inputPaths []string, idleWaitTime time.Duration) {
 	viper := viper.New()
 	viper.SetConfigType("toml")
 	viper.SetConfigName("config")
@@ -32,6 +27,5 @@ func init() {
 	viper.BindPFlag("wait-seconds", pflag.Lookup("wait"))
 	viper.BindPFlag("inputs", pflag.Lookup("input"))
 
-	idleWaitTime = viper.GetDuration("wait-seconds")
-	inputPaths = viper.GetStringSlice("inputs")
+	return viper.GetStringSlice("inputs"), viper.GetDuration("wait-seconds")
 }

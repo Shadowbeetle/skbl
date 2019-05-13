@@ -11,6 +11,8 @@ import (
 func main() {
 	var failCnt int
 	var inputFiles []io.Reader
+
+	inputPaths, idleWaitTime := readConfig()
 	for _, path := range inputPaths {
 		f, err := os.Open(path)
 		if err != nil {
