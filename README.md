@@ -24,7 +24,7 @@ $ systemctl daemon-reload
 $ systemctl ser start skbl@$USER.service
 ```
 
-**If the keyboard backlight is not turned back on after hitting any key, read the Iitial setup section.**
+**If the keyboard backlight is not turned back on after hitting any key, read the [Initial setup](#initial-setup) section.**
 
 Enable the service to start `skbl` on startup
 
@@ -76,7 +76,7 @@ wait-seconds = "10s" # idle time after which backlight should be turned off
 inputs = ["/dev/input/mice", "/dev/input/event4"] # input files to listen to
 ```
 
-for more information on inputs see Initial setup.
+for more information on inputs see [Initial setup](#initial-setup).
 
 ## Flags
 
