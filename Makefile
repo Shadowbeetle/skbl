@@ -1,9 +1,9 @@
 PKGS := $(shell go list ./... | grep -v /vendor)
 
-SYSTEMD_FILENAME := skbl.service
+SYSTEMD_FILENAME := skbl@.service
 SYSTEMD_SOURCE_DIR := systemd/
 SYSTEMD_SOURCE_PATH := $(SYSTEMD_SOURCE_DIR)$(SYSTEMD_FILENAME)
-SYSTEMD_TARGET_DIR := /usr/lib/systemd/user/
+SYSTEMD_TARGET_DIR := /usr/lib/systemd/system/
 SYSTEMD_TARGET_PATH := $(SYSTEMD_TARGET_DIR)$(SYSTEMD_FILENAME)
 
 BIN_FILENAME := skbl
@@ -36,7 +36,7 @@ clean:
 .PHONY: install
 install: $(BIN_TARGET_PATH) $(SYSTEMD_TARGET_PATH) config_dir $(CONFIG_TARGET_PATH)
 	sudo usermod -aG input $(USER)
-	systemctl --user daemon-reload
+	sudo systemctl daemon-reload
 
 $(BIN_TARGET_PATH): build
 	sudo cp -f $(BIN_SOURCE_PATH) $(BIN_TARGET_DIR)
@@ -59,4 +59,4 @@ uninstall:
 	test -f $(SYSTEMD_TARGET_PATH) && sudo rm $(SYSTEMD_TARGET_PATH)
 	test -d $(CONFIG_TARGET_DIR) && sudo rm -r $(CONFIG_TARGET_DIR)
 	test -f $(BIN_TARGET_PATH) && sudo rm $(BIN_TARGET_PATH)
-	sudo systemctl --user daemon-reload
+	sudo systemctl daemon-reload

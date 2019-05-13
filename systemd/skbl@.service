@@ -1,10 +1,13 @@
 [Unit]
 Description=Turn off keyboard backlight after a certain period of idleness
 Documentation=https://github.com/Shadowbeetle/skbl
+After=upower.service
+Requires=upower.service
 
 [Service]
 ExecStart=/usr/bin/skbl
 Restart=always
+User=%i
 
 [Install]
 WantedBy=multi-user.target
