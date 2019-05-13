@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/Shadowbeetle/skbl)](https://goreportcard.com/report/github.com/Shadowbeetle/skbl)
+
 Turn off keyboard backlight after a certain period of idleness
 
 # Requirements
