@@ -2,6 +2,7 @@ package backlight
 
 import (
 	"io"
+	"sync"
 
 	"github.com/Shadowbeetle/skbl/upower"
 	"github.com/godbus/dbus"
@@ -13,6 +14,7 @@ type KbdBacklight struct {
 	desiredBrightness int32
 	inputCh           chan bool
 	ErrorCh           chan error
+	mutex             sync.Mutex
 }
 
 func NewKbdBacklight(conf Config) (*KbdBacklight, error) {
@@ -55,7 +57,9 @@ func (kbl *KbdBacklight) Run() {
 func (kbl *KbdBacklight) onInputTurnOn(f io.Reader) {
 	b1 := make([]byte, 32)
 	for {
+		kbl.mutex.Lock() // we only need this because the tests access the reader straight
 		_, err := f.Read(b1)
+		kbl.mutex.Unlock()
 		if err != nil {
 			kbl.ErrorCh <- err
 			continue

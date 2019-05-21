@@ -1,6 +1,8 @@
 package upower
 
 import (
+	"sync"
+
 	"github.com/godbus/dbus"
 )
 
@@ -14,6 +16,7 @@ type DbusObject struct {
 	AddMatchSignalStubArgs AddMatchSignalStubArgs
 	ExpectedBrightess      int32
 	ShouldStore            bool
+	Mutex                  sync.Mutex
 }
 
 func NewDbusObject(expectedBrightness int32, shouldStore bool, shouldCallStrobe bool) *DbusObject {
@@ -47,6 +50,9 @@ type CallStubArgs struct {
 }
 
 func (mobj *DbusObject) Call(method string, flags dbus.Flags, args ...interface{}) *dbus.Call {
+	mobj.Mutex.Lock()
+	defer mobj.Mutex.Unlock()
+
 	mobj.IsCallStubCalled = true
 	mobj.CallStubArgs = CallStubArgs{method, flags, args}
 	mobj.CallStubCallCount += 1

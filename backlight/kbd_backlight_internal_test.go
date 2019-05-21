@@ -121,56 +121,79 @@ func TestRunInput(t *testing.T) {
 		}
 	}()
 
+	kbl.mutex.Lock() // we need this because onInputTurnOn is already running and reads qwerInput continously
 	qwerInput.Reset("q")
+	kbl.mutex.Unlock()
 	<-timer.ResetStrobe
 
 	if timer.ResetStubArg != conf.IdleWaitTime {
 		t.Errorf("expected timer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, timer.ResetStubArg)
 	}
 
-	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
-		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, mockDObj.CallStubArgs)
+	mockDObj.Mutex.Lock()
+	callStubArgs := mockDObj.CallStubArgs
+	mockDObj.Mutex.Unlock()
+	if !reflect.DeepEqual(expectedCallArgs, callStubArgs) {
+		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, callStubArgs)
 	}
 
+	kbl.mutex.Lock() // we need this because onInputTurnOn is already running and reads qwerInput continously
 	asdfInput.Reset("a")
+	kbl.mutex.Unlock()
 	<-timer.ResetStrobe
 
 	if timer.ResetStubArg != conf.IdleWaitTime {
 		t.Errorf("expected timer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, timer.ResetStubArg)
 	}
 
-	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
-		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, mockDObj.CallStubArgs)
+	mockDObj.Mutex.Lock()
+	callStubArgs = mockDObj.CallStubArgs
+	mockDObj.Mutex.Unlock()
+	if !reflect.DeepEqual(expectedCallArgs, callStubArgs) {
+		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, callStubArgs)
 	}
 
+	kbl.mutex.Lock() // we need this because onInputTurnOn is already running and reads qwerInput continously
 	zxcvInput.Reset("z")
+	kbl.mutex.Unlock()
 	<-timer.ResetStrobe
 
 	if timer.ResetStubArg != conf.IdleWaitTime {
 		t.Errorf("expected timer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, timer.ResetStubArg)
 	}
 
-	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
-		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, mockDObj.CallStubArgs)
+	mockDObj.Mutex.Lock()
+	callStubArgs = mockDObj.CallStubArgs
+	mockDObj.Mutex.Unlock()
+	if !reflect.DeepEqual(expectedCallArgs, callStubArgs) {
+		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, callStubArgs)
 	}
 
+	kbl.mutex.Lock() // we need this because onInputTurnOn is already running and reads qwerInput continously
 	qwerInput.Reset("w")
+	kbl.mutex.Unlock()
 	<-timer.ResetStrobe
-
-	if !reflect.DeepEqual(expectedCallArgs, mockDObj.CallStubArgs) {
-		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, mockDObj.CallStubArgs)
-	}
 
 	if timer.ResetStubArg != conf.IdleWaitTime {
 		t.Errorf("expected timer.ResetStubArg to equal %v, got %v instead\n", conf.IdleWaitTime, timer.ResetStubArg)
+	}
+
+	mockDObj.Mutex.Lock()
+	callStubArgs = mockDObj.CallStubArgs
+	mockDObj.Mutex.Unlock()
+	if !reflect.DeepEqual(expectedCallArgs, callStubArgs) {
+		t.Errorf("expected mockDObj.CallStub to be called with %v, got %v instead", expectedCallArgs, callStubArgs)
 	}
 
 	if timer.ResetStubCallCount != 4 {
 		t.Errorf("expected timer.Reset to be called 4 times got %d instead\n", timer.ResetStubCallCount)
 	}
 
-	if mockDObj.CallStubCallCount != 5 {
-		t.Errorf("expected mockDObj.Call to be called 5 times got %d instead\n", mockDObj.CallStubCallCount)
+	mockDObj.Mutex.Lock()
+	callStubCallCount := mockDObj.CallStubCallCount
+	mockDObj.Mutex.Unlock()
+	if callStubCallCount != 5 {
+		t.Errorf("expected mockDObj.Call to be called 5 times got %d instead\n", callStubCallCount)
 	}
 }
 
@@ -285,5 +308,3 @@ func TestRunUserBrightnessChange(t *testing.T) {
 		t.Errorf("expected kbl.desiredBrightness to be %d got %d instead", expectedBrightness, kbl.desiredBrightness)
 	}
 }
-
-func TestConfig(t *testing.T) {}
