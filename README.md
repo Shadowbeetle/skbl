@@ -23,7 +23,7 @@ To start using `skbl` with the default setup simply run:
 
 ```sh
 $ systemctl daemon-reload
-$ systemctl ser start skbl@$USER.service
+$ systemctl --user start skbl@$USER.service
 ```
 
 **If the keyboard backlight is not turned back on after hitting any key, read the [Initial setup](#initial-setup) section.**
