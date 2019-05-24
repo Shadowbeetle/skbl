@@ -22,8 +22,8 @@ This installs the binary, creates a user systemd service, adds your user to the 
 To start using `skbl` with the default setup simply run:
 
 ```sh
-$ systemctl daemon-reload
-$ systemctl --user start skbl@$USER.service
+$ sudo systemctl daemon-reload
+$ sudo systemctl start skbl@$USER.service
 ```
 
 **If the keyboard backlight is not turned back on after hitting any key, read the [Initial setup](#initial-setup) section.**
@@ -31,7 +31,7 @@ $ systemctl --user start skbl@$USER.service
 Enable the service to start `skbl` on startup
 
 ```sh
-$ systemctl enable skbl@$USER.service
+$ sudo systemctl enable skbl@$USER.service
 ```
 
 You can of course use `skbl` by simply running go get and set everythin up yourself by hand as well.
